@@ -71,18 +71,20 @@ def smooth_quant(model: str,
         awq_layers(layers, fc2fcs, norm2fcs, act_scales, awq_ratios, -1,
                    device)
     else:
-        smooth_layers(layers, fc2fcs, norm2fcs, act_scales, -1, device)
+        migration_scales =  smooth_layers(layers, fc2fcs, norm2fcs, act_scales, -1, device)
 
     rmsnorms = collect_target_modules(model, norm_type)
 
     for name, linear in fcs.items():
         linear.to(device)
         q_linear = QLinear.from_float(linear)
+        q_linear.migration_scale.copy_(migration_scales[name])
         parent_name, _, child_name = name.rpartition('.')
         parent = model.get_submodule(parent_name)
         setattr(parent, child_name, q_linear)
         linear.to('cpu')
-
+        
+    #TODO 需要注释掉该段落
     for name, norm in rmsnorms.items():
         norm.to(device)
         q_norm = QRMSNorm.from_float(norm)
