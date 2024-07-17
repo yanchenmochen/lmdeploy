@@ -248,7 +248,7 @@ def smooth_layers(layers,
                   group_size=-1,
                   device='cuda'):
     """Apply weight smoothing based on input scales."""
-
+    migration_scales = {}
     for l_name, layer in layers.items():
         layer.to(device)
         for ln_name, fc_names in norm2fcs.items():
@@ -256,18 +256,24 @@ def smooth_layers(layers,
 
             ln = layer.get_submodule(ln_name)
             fcs = [layer.get_submodule(n) for n in fc_names]
-            smooth_ln_fcs(ln, fcs, a_scales[a_name], group_size)
+            migration_scale = smooth_ln_fcs(ln, fcs, a_scales[a_name], group_size)
+            full_fc_names = [f"{l_name}.{name}" for name in fc_names]
+            migration_scales.update({name: migration_scale for name in full_fc_names})
 
         for f_name, fc_names in fc2fcs.items():
             a_name = [f'{l_name}.{n}' for n in fc_names][0]
 
             fc = layer.get_submodule(f_name)
             fcs = [layer.get_submodule(n) for n in fc_names]
-
-            smooth_fc_fcs(fc, fcs, a_scales[a_name], group_size)
+            
+            migration_scale = smooth_fc_fcs(fc, fcs, a_scales[a_name], group_size)
+            full_fc_names = [f"{l_name}.{name}" for name in fc_names]
+            migration_scales.update({name: migration_scale for name in full_fc_names})
 
         layer.to('cpu')
         print(f'{l_name} smooth weight done.')
+    
+    return migration_scales
 
 
 def pseudo_quantize_tensor(w,
