@@ -107,9 +107,9 @@ def smooth_ln_fcs(ln: torch.nn.Module,
 
     scales[zero_positions] = 1
 
-    ln.weight.div_(scales)
-    if hasattr(ln, 'bias'):
-        ln.bias.div_(scales)
+    # ln.weight.div_(scales)
+    # if hasattr(ln, 'bias'):
+    #     ln.bias.div_(scales)
 
     for fc in fcs:
         fc.weight.mul_(scales.view(1, -1))
@@ -154,19 +154,19 @@ def smooth_fc_fcs(pre_fc: torch.nn.Module,
               w_scales.pow(1 - alpha)).clamp(min=1e-4).to(device).to(dtype)
     scales = scales / (scales.max() * scales.min()).sqrt()
 
-    # (for qwen&baichuan) pre_fc is packed QKV, only V needs to scale
-    if size_pre_fc > size_a and size_pre_fc % size_a == 0 \
-            and size_pre_fc // size_a == 3:
+    # # (for qwen&baichuan) pre_fc is packed QKV, only V needs to scale
+    # if size_pre_fc > size_a and size_pre_fc % size_a == 0 \
+    #         and size_pre_fc // size_a == 3:
 
-        pre_fc.weight[-size_a:].div_(scales.view(-1, 1))
+    #     pre_fc.weight[-size_a:].div_(scales.view(-1, 1))
 
-        if getattr(pre_fc, 'bias', None) is not None:
-            pre_fc.bias[-size_a:].div_(scales)
-    else:
-        pre_fc.weight.div_(scales.view(-1, 1))
+    #     if getattr(pre_fc, 'bias', None) is not None:
+    #         pre_fc.bias[-size_a:].div_(scales)
+    # else:
+    #     pre_fc.weight.div_(scales.view(-1, 1))
 
-        if getattr(pre_fc, 'bias', None) is not None:
-            pre_fc.bias.div_(scales)
+    #     if getattr(pre_fc, 'bias', None) is not None:
+    #         pre_fc.bias.div_(scales)
 
     for fc in fcs:
         fc.weight.mul_(scales.view(1, -1))
