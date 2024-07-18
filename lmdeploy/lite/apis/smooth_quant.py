@@ -85,13 +85,13 @@ def smooth_quant(model: str,
         linear.to('cpu')
         
     #TODO 需要注释掉该段落
-    for name, norm in rmsnorms.items():
-        norm.to(device)
-        q_norm = QRMSNorm.from_float(norm)
-        parent_name, _, child_name = name.rpartition('.')
-        parent = model.get_submodule(parent_name)
-        setattr(parent, child_name, q_norm)
-        norm.to('cpu')
+    # for name, norm in rmsnorms.items():
+    #     norm.to(device)
+    #     q_norm = QRMSNorm.from_float(norm)
+    #     parent_name, _, child_name = name.rpartition('.')
+    #     parent = model.get_submodule(parent_name)
+    #     setattr(parent, child_name, q_norm)
+    #     norm.to('cpu')
 
     if vl_model:
         from .auto_awq import save_vl_model
