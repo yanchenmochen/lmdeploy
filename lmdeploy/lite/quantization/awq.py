@@ -305,7 +305,14 @@ def smooth_layers(layers,
             fcs = [layer.get_submodule(n) for n in fc_names]
             migration_scale = smooth_ln_fcs(ln, fcs, a_scales[a_name], group_size)
             full_fc_names = [f"{l_name}.{name}" for name in fc_names]
-            migration_scales.update({name: migration_scale for name in full_fc_names})
+            # migration_scales.update({name: migration_scale for name in full_fc_names})
+            for fc, fc_name in zip(fcs, full_fc_names):
+                weight_shape = fc.weight.shape  # 假设 weight 形状为 [out_features, in_features]
+                migration_scale_expanded = migration_scale.expand(weight_shape)  # 或者用 repeat
+                migration_scales.update({fc_name: migration_scale_expanded})
+
+    
+
 
         for f_name, fc_names in fc2fcs.items():
             a_name = [f'{l_name}.{n}' for n in fc_names][0]
@@ -316,6 +323,10 @@ def smooth_layers(layers,
             migration_scale = smooth_fc_fcs(fc, fcs, a_scales[a_name], group_size)
             full_fc_names = [f"{l_name}.{name}" for name in fc_names]
             migration_scales.update({name: migration_scale for name in full_fc_names})
+            # for fc, fc_name in zip(fcs, full_fc_names):
+            #     weight_shape = fc.weight.shape  # 假设 weight 形状为 [out_features, in_features]
+            #     migration_scale_expanded = migration_scale.expand(weight_shape)  # 或者用 repeat
+            #     migration_scales.update({fc_name: migration_scale_expanded})
 
         layer.to('cpu')
         print(f'{l_name} smooth weight done.')
