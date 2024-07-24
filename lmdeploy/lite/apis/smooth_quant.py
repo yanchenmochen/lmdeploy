@@ -131,7 +131,7 @@ def smooth_quant(model: str,
     for name, linear in fcs.items():
         linear.to(device)
         q_linear = QLinear.from_float(linear)
-        q_linear.migration_scale.copy_(migration_scales[name])
+        q_linear.migration_scale.copy_(migration_scales[name].view(1, -1))
 
         parent_name, _, child_name = name.rpartition('.')
         parent = model.get_submodule(parent_name)
