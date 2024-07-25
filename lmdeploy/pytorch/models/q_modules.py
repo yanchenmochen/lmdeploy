@@ -95,11 +95,11 @@ class QLinear(nn.Module):
                         dtype=torch.int8))
         self.register_buffer(
             'scale',
-            torch.empty((out_features, 1), device=device, dtype=torch.float32))
+            torch.empty((out_features, 1), device=device, dtype=torch.float16))
         
         self.register_buffer(
             'migration_scale',
-            torch.empty((1, in_features), device=device, dtype=torch.float32))
+            torch.empty((1, in_features), device=device, dtype=torch.float16))
         
         if bias:
             self.register_buffer('bias',

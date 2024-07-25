@@ -319,10 +319,6 @@ def smooth_layers(layers,
             full_fc_names = [f"{l_name}.{name}" for name in fc_names]
             migration_scales.update({name: migration_scale for name in full_fc_names})
     
-
-    
-
-
         for f_name, fc_names in fc2fcs.items():
             a_name = [f'{l_name}.{n}' for n in fc_names][0]
 
