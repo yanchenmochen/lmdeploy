@@ -153,9 +153,9 @@ def smooth_fc_fcs(pre_fc: torch.nn.Module,
     size_a = act_scales.size(0)
     size_pre_fc = pre_fc.weight.size(0)
 
-    # (for llama2) use group query attention, pre_fc is v_proj, fc is o_proj
-    if size_pre_fc < size_a and size_a % size_pre_fc == 0:
-        return
+    # # (for llama2) use group query attention, pre_fc is v_proj, fc is o_proj
+    # if size_pre_fc < size_a and size_a % size_pre_fc == 0:
+    #     return
 
     act_scales = act_scales.to(device=device, dtype=dtype)
 
@@ -272,10 +272,6 @@ def smooth_layers(layers,
             full_fc_names = [f"{l_name}.{name}" for name in fc_names]
             migration_scales.update({name: migration_scale for name in full_fc_names})
     
-
-    
-
-
         for f_name, fc_names in fc2fcs.items():
             a_name = [f'{l_name}.{n}' for n in fc_names][0]
 

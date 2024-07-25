@@ -156,7 +156,7 @@ def smooth_quant(model: str,
     else:
         migration_scales =  smooth_layers(layers, fc2fcs, norm2fcs, act_scales, -1, device)
 
-    rmsnorms = collect_target_modules(model, norm_type)
+    # rmsnorms = collect_target_modules(model, norm_type)
 
     for name, linear in fcs.items():
         linear.to(device)
