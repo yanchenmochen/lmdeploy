@@ -101,10 +101,19 @@ class ActivationObserver(GlobalAvailMixin):
         """
         if self.observed:
             return
-        if len(x.shape) != 3:
-            return
-        assert x.size(2) == self.dim
-        cur_val = x.flatten(0, 1)
+        # if len(x.shape) != 3:
+        #     return
+        # assert x.size(2) == self.dim
+        # cur_val = x.flatten(0, 1)
+        if len(x.shape)==2:
+            assert x.size(-1) == self.dim
+            cur_val = x
+        elif len(x.shape) == 3:
+            assert x.size(-1) == self.dim
+            cur_val = x.flatten(0, 1)
+        else:
+            raise RuntimeError(f"Please verify the shape of input tensor: {x.shape}")
+            
         cur_max = cur_val.max(0)[0].cpu()
         cur_min = cur_val.min(0)[0].cpu()
         cur_mean = cur_val.mean(0).cpu()

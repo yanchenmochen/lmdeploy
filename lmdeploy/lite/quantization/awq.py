@@ -31,9 +31,17 @@ NORM_FCS_MAP = {
     'DecoderLayer': {
         'input_layernorm': ['self_attn.W_pack'],
         'post_attention_layernorm': ['mlp.gate_proj', 'mlp.up_proj']
+    },
+    'OPTDecoderLayer': {
+        'self_attn_layer_norm': ['self_attn.k_proj', 'self_attn.q_proj', 'self_attn.v_proj'],
+        'final_layer_norm': ['fc1']
     }
 }
 
+
+# Note: 由于不需要融合，所以，fc-fc的可以放在一起触发计算即可。
+# 比如说对于OPT模型，无法直接将scale乘以fc2，然后将fc1除以fc2，因为中间经过了激活ReLU
+# 但是如果不融合，那么只需要触发fc2的scale的计算即可。
 FC_FCS_MAP = {
     'LlamaDecoderLayer': {
         'self_attn.v_proj': ['self_attn.o_proj'],
@@ -57,6 +65,10 @@ FC_FCS_MAP = {
     'DecoderLayer': {
         'self_attn.W_pack': ['self_attn.o_proj'],
         'mlp.up_proj': ['mlp.down_proj']
+    },
+    'OPTDecoderLayer': {
+        'self_attn.v_proj': ['self_attn.out_proj'],
+        'fc1': ['fc2']
     }
 }
 

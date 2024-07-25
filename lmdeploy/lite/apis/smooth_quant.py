@@ -1,18 +1,42 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
 import os.path as osp
+from pathlib import Path
 import shutil
-
+import json
 import fire
 import torch
 from torch import nn
 
 import lmdeploy
-from lmdeploy.lite.apis.calibrate import calibrate
+from lmdeploy.lite.apis.calibrate import calibrate, get_model_and_tokenizer
 from lmdeploy.lite.quantization.awq import (FC_FCS_MAP, NORM_FCS_MAP,
                                             awq_layers, smooth_layers)
 from lmdeploy.lite.utils import collect_target_modules
 from lmdeploy.pytorch.models import QLinear, QRMSNorm
+
+def generate_quantize_config(work_dir: str, filename: str = 'quantize_config.json'):
+    '''
+    为当前生成quantize_config.json配置文件，该文件由vllm读取
+    '''
+    # 配置内容
+    config = {
+        "bits": 8,
+        "group_size": -1,
+        "quant_method": "smooth_quant",
+        "linear_only": "true"
+    }
+
+    # 文件名称
+    config_file_name = osp.join(work_dir, filename)
+
+    # 将配置写入 JSON 文件
+    with open(config_file_name, 'w') as config_file:
+        json.dump(config, config_file, indent=4)
+
+    print(f"配置文件 {filename} 已成功生成。")
+    return 
+
 
 LAYER_TYPE_MAP = {
     'InternLMForCausalLM': 'InternLMDecoderLayer',
@@ -20,6 +44,7 @@ LAYER_TYPE_MAP = {
     'QWenLMHeadModel': 'QWenBlock',
     'BaiChuanForCausalLM': 'DecoderLayer',
     'LlamaForCausalLM': 'LlamaDecoderLayer',
+    'OPTForCausalLM': 'OPTDecoderLayer'
 }
 NORM_TYPE_MAP = {
     'InternLMForCausalLM': 'InternLMRMSNorm',
@@ -27,6 +52,7 @@ NORM_TYPE_MAP = {
     'QWenLMHeadModel': 'RMSNorm',
     'BaiChuanForCausalLM': 'RMSNorm',
     'LlamaForCausalLM': 'LlamaRMSNorm',
+    'OPTForCausalLM': 'LayerNorm'
 }
 
 LMDEPLOY_ROOT = lmdeploy.__path__[0]
@@ -75,7 +101,9 @@ def smooth_quant(model: str,
                  device: str = 'cuda'):
 
     model_path = model
-    vl_model, model, tokenizer, work_dir = calibrate(model,
+    work_dir = Path(work_dir)
+    if not (work_dir / 'inputs_stats.pth').exists():
+        vl_model, model, tokenizer, work_dir = calibrate(model,
                                                      calib_dataset,
                                                      calib_samples,
                                                      calib_seqlen,
@@ -85,6 +113,8 @@ def smooth_quant(model: str,
                                                      w_group_size=-1,
                                                      search_scale=search_scale,
                                                      batch_size=batch_size)
+    else:
+        vl_model, model, tokenizer = get_model_and_tokenizer(model)
 
     # calibrate function exports the calibration statistics
     # (inputs, outputs, keys and values) to `work_dir`.
@@ -147,10 +177,12 @@ def smooth_quant(model: str,
     #     setattr(parent, child_name, q_norm)
     #     norm.to('cpu')
 
-    if hasattr(model.config, 'auto_map'):
-        model.config.auto_map.update(AUTO_MAP[type(model).__name__])
-    else:
-        model.config.auto_map = AUTO_MAP[type(model).__name__]
+    # 因为不需要lmdeploy载入该模型，而仅仅使用lmdeploy的导出，因此不需要这个过程
+    # 这样就不需要auto_map的属性
+    # if hasattr(model.config, 'auto_map'):
+    #     model.config.auto_map.update(AUTO_MAP[type(model).__name__])
+    # else:
+    #     model.config.auto_map = AUTO_MAP[type(model).__name__]
 
     if vl_model:
         from .auto_awq import save_vl_model
@@ -160,8 +192,11 @@ def smooth_quant(model: str,
                               max_shard_size='2GB',
                               safe_serialization=False)
     tokenizer.save_pretrained(work_dir)
-
-    shutil.copy(MODEL_PATH_MAP[type(model).__name__], work_dir)
+    generate_quantize_config(work_dir)
+    
+    # 因为不需要lmdeploy载入该模型，而仅仅使用lmdeploy的导出，因此不需要这个过程 类似modelling_llama.py
+    # pytorch/modeling/modeling_llama.py
+    # shutil.copy(MODEL_PATH_MAP[type(model).__name__], work_dir)
 
 
 if __name__ == '__main__':
