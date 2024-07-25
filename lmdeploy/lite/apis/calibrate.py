@@ -28,6 +28,8 @@ LAYER_TYPE_MAP = {
     'MixtralForCausalLM': 'MixtralDecoderLayer',
     'Qwen2VLForConditionalGeneration': 'Qwen2VLDecoderLayer',
     'MistralForCausalLM': 'MistralDecoderLayer',
+
+    'OPTForCausalLM': 'OPTDecoderLayer'
 }
 
 NORM_TYPE_MAP = {
@@ -41,11 +43,13 @@ NORM_TYPE_MAP = {
     'LlavaLlamaForCausalLM': 'LlamaRMSNorm',
     'MGMLlamaForCausalLM': 'LlamaRMSNorm',  # mini gemini
     'InternLMXComposer2ForCausalLM': 'InternLM2RMSNorm',
+
     'Phi3ForCausalLM': 'Phi3RMSNorm',
     'ChatGLMForConditionalGeneration': 'RMSNorm',
     'MixtralForCausalLM': 'MixtralRMSNorm',
     'Qwen2VLForConditionalGeneration': 'Qwen2RMSNorm',
     'MistralForCausalLM': 'MistralRMSNorm',
+    'OPTForCausalLM': 'LayerNorm'
 }
 
 HEAD_NAME_MAP = {
@@ -64,6 +68,7 @@ HEAD_NAME_MAP = {
     'MixtralForCausalLM': 'lm_head',
     'Qwen2VLForConditionalGeneration': 'lm_head',
     'MistralForCausalLM': 'lm_head',
+    'OPTForCausalLM': 'lm_head'
 }
 
 
@@ -139,7 +144,38 @@ def _prepare_for_calibrate(model: nn.Module,
         else:
             child.to(device)
             print(f'Move {mod_name} to GPU.')
+def get_model_and_tokenizer(model: str):
+    model_type, _ = get_task(model)
+    if model_type == 'llm':
+        # Load tokenizer and configuration
+        tokenizer = AutoTokenizer.from_pretrained(model,
+                                                  use_fast=False,
+                                                  trust_remote_code=True)
 
+        model = load_hf_from_pretrained(model,
+                                        torch_dtype=torch.float16,
+                                        trust_remote_code=True)
+        vl_model = None
+    elif model_type == 'vlm':
+        from lmdeploy.vl.model.builder import vl_model_with_tokenizer
+        vl_model, model, tokenizer = vl_model_with_tokenizer(model_path=model)
+
+    model_type = type(model).__name__
+    if model_type not in LAYER_TYPE_MAP or model_type not in NORM_TYPE_MAP:
+        raise RuntimeError(
+            f'Currently, quantification and calibration of {model_type} are '
+            f'not supported. The supported model types are '
+            f"{', '.join(LAYER_TYPE_MAP.keys())}.")
+
+    if model_type == 'QWenLMHeadModel':
+        try:
+            import flash_attn  # noqa: F401
+        except ImportError:
+            raise RuntimeError(
+                'When using Qwen, you need to `pip install flash-attn` first, '
+                'otherwise calibration and quantification will not work '
+                'properly.')
+    return vl_model, model, tokenizer
 
 # TODO to be removed
 def make_compatible_internvl_config(model_path):

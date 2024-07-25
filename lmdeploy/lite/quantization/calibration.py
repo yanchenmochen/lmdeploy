@@ -108,6 +108,7 @@ class CalibrationContext():
         def _input_hook(mod: nn.Module, inp: torch.Tensor):
             m_name = self.mod2name[mod]
             obs = ActivationObserver.find(m_name, group=self.inp_obs_group)
+            print(f"观察模块: {m_name}, 输入激活形状: {inp[0].shape}")
             obs.observe(inp[0])
 
         group = ActivationObserver.find_group(self.inp_obs_group)
@@ -126,6 +127,7 @@ class CalibrationContext():
         def _output_hook(mod: nn.Module, inp: torch.Tensor, out: torch.Tensor):
             m_name = self.mod2name[mod]
             obs = ActivationObserver.find(m_name, group=self.out_obs_group)
+            print(f"观察模块: {m_name}, 输出激活形状: {out.shape}")
             obs.observe(out)
 
         group = ActivationObserver.find_group(self.out_obs_group)
