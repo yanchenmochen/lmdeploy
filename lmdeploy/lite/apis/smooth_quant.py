@@ -160,8 +160,15 @@ def smooth_quant(model: str,
 
     for name, linear in fcs.items():
         linear.to(device)
-        q_linear = QLinear.from_float(linear)
-        q_linear.migration_scale.copy_(migration_scales[name].view(1, -1))
+        
+        if name in migration_scales:
+            q_linear = QLinear.from_float(linear)
+            q_linear.migration_scale.copy_(migration_scales[name].view(1, -1))
+        else:
+            # else处理类似OPT模型中的fc2和out_proj模块，暂时不对其进行量化迁移，因此scale设置为1
+            q_linear = QLinear.from_float(linear)
+            input_dim=linear.weight.shape[1]
+            q_linear.migration_scale.copy_(torch.ones(1, input_dim))
 
         parent_name, _, child_name = name.rpartition('.')
         parent = model.get_submodule(parent_name)
