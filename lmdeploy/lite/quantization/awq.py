@@ -111,8 +111,8 @@ FC_FCS_MAP = {
         'mlp.up_proj': ['mlp.down_proj'],
     },
     'OPTDecoderLayer': {
-        'self_attn.v_proj': ['self_attn.out_proj'],
-        'fc1': ['fc2']
+        # 'self_attn.v_proj': ['self_attn.out_proj'],
+        # 'fc1': ['fc2']
     }
 }
 
@@ -202,7 +202,7 @@ def smooth_fc_fcs(pre_fc: torch.nn.Module,
     :param alpha: Scaling factor (default is 0.5)
     :return: Scales
     """
-    device, dtype = pre_fc.weight.device, pre_fc.weight.dtype
+    device, dtype = fcs[0].weight.device, fcs[0].weight.dtype
 
     size_a = act_scales.size(0)
     size_pre_fc = pre_fc.weight.size(0)
@@ -235,6 +235,7 @@ def smooth_fc_fcs(pre_fc: torch.nn.Module,
 
     for fc in fcs:
         fc.weight.mul_(scales.view(1, -1))
+
 
     for p in pre_fc.parameters():
         assert torch.isnan(p).sum() == 0
