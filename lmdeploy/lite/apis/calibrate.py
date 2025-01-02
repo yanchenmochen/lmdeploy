@@ -28,7 +28,6 @@ LAYER_TYPE_MAP = {
     'MixtralForCausalLM': 'MixtralDecoderLayer',
     'Qwen2VLForConditionalGeneration': 'Qwen2VLDecoderLayer',
     'MistralForCausalLM': 'MistralDecoderLayer',
-
     'OPTForCausalLM': 'OPTDecoderLayer'
 }
 

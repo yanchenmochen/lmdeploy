@@ -43,58 +43,6 @@ def generate_quantize_config(work_dir: str, filename: str = 'quantize_config.jso
     return 
 
 
-LAYER_TYPE_MAP = {
-    'InternLMForCausalLM': 'InternLMDecoderLayer',
-    'InternLM2ForCausalLM': 'InternLM2DecoderLayer',
-    'QWenLMHeadModel': 'QWenBlock',
-    'BaiChuanForCausalLM': 'DecoderLayer',
-    'LlamaForCausalLM': 'LlamaDecoderLayer',
-    'OPTForCausalLM': 'OPTDecoderLayer'
-}
-NORM_TYPE_MAP = {
-    'InternLMForCausalLM': 'InternLMRMSNorm',
-    'InternLM2ForCausalLM': 'InternLM2RMSNorm',
-    'QWenLMHeadModel': 'RMSNorm',
-    'BaiChuanForCausalLM': 'RMSNorm',
-    'LlamaForCausalLM': 'LlamaRMSNorm',
-    'OPTForCausalLM': 'LayerNorm'
-}
-
-LMDEPLOY_ROOT = lmdeploy.__path__[0]
-
-MODEL_PATH_MAP = {
-    'InternLMForCausalLM':
-    osp.join(LMDEPLOY_ROOT, 'pytorch/modeling/modeling_internlm.py'),
-    'InternLM2ForCausalLM':
-    osp.join(LMDEPLOY_ROOT, 'pytorch/modeling/modeling_internlm2.py'),
-    'LlamaForCausalLM':
-    osp.join(LMDEPLOY_ROOT, 'pytorch/modeling/modeling_llama.py'),
-    'BaiChuanForCausalLM':
-    osp.join(LMDEPLOY_ROOT, 'pytorch/modeling/modeling_baichuan.py')
-}
-
-AUTO_MAP = {
-    'InternLMForCausalLM': {
-        'AutoConfig': 'configuration_internlm.InternLMConfig',
-        'AutoModel': 'modeling_internlm.InternLMForCausalLM',
-        'AutoModelForCausalLM': 'modeling_internlm.InternLMForCausalLM'
-    },
-    'InternLM2ForCausalLM': {
-        'AutoConfig': 'configuration_internlm2.InternLMConfig',
-        'AutoModelForCausalLM': 'modeling_internlm2.InternLM2ForCausalLM',
-        'AutoModel': 'modeling_internlm2.InternLM2ForCausalLM'
-    },
-    'LlamaForCausalLM': {
-        'AutoModel': 'modeling_llama.LlamaForCausalLM',
-        'AutoModelForCausalLM': 'modeling_llama.LlamaForCausalLM'
-    },
-    'BaiChuanForCausalLM': {
-        'AutoConfig': 'configuration_baichuan.BaiChuanConfig',
-        'AutoModelForCausalLM': 'modeling_baichuan.BaiChuanForCausalLM'
-    }
-}
-
-
 def smooth_quant(model: str,
                  work_dir: str = './work_dir',
                  calib_dataset: str = 'ptb',
